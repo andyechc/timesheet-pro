@@ -63,12 +63,17 @@ function generateId(): string {
 // ============ PROJECTS ============
 export const projectService = {
   findMany: (include?: { tasks?: boolean }): Project[] => {
-    const { projects, tasks } = getData();
+    const { projects, tasks, timesheets } = getData();
     
     if (include?.tasks) {
       return projects.map(p => ({
         ...p,
-        tasks: tasks.filter(t => t.projectId === p.id)
+        tasks: tasks.filter(t => t.projectId === p.id).map(t => ({
+          ...t,
+          timesheets: timesheets.filter(ts => ts.taskId === t.id).sort((a, b) =>
+            new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+          )
+        }))
       })) as any;
     }
     
@@ -78,7 +83,7 @@ export const projectService = {
   },
 
   findUnique: (id: string, include?: { tasks?: boolean }): Project | null => {
-    const { projects, tasks } = getData();
+    const { projects, tasks, timesheets } = getData();
     const project = projects.find(p => p.id === id);
     if (!project) return null;
     
@@ -87,7 +92,12 @@ export const projectService = {
         ...project,
         tasks: tasks.filter(t => t.projectId === id).sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
+        ).map(t => ({
+          ...t,
+          timesheets: timesheets.filter(ts => ts.taskId === t.id).sort((a, b) =>
+            new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+          )
+        }))
       } as any;
     }
     
@@ -172,21 +182,24 @@ export const taskService = {
     return result;
   },
 
-  findUnique: (id: string, include?: { timesheets?: boolean }): Task | null => {
-    const { tasks, timesheets } = getData();
+  findUnique: (id: string, include?: { timesheets?: boolean; project?: boolean }): Task | null => {
+    const { tasks, timesheets, projects } = getData();
     const task = tasks.find(t => t.id === id);
     if (!task) return null;
     
+    const result: any = { ...task };
+    
     if (include?.timesheets) {
-      return {
-        ...task,
-        timesheets: timesheets.filter(ts => ts.taskId === id).sort((a, b) =>
-          new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-        )
-      } as any;
+      result.timesheets = timesheets.filter(ts => ts.taskId === id).sort((a, b) =>
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      );
     }
     
-    return task;
+    if (include?.project) {
+      result.project = projects.find(p => p.id === task.projectId);
+    }
+    
+    return result;
   },
 
   create: (data: { title: string; description?: string; status?: string; projectId: string }): Task => {

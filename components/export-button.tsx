@@ -46,15 +46,24 @@ export function ExportButton({
         allTimesheets = allTimesheets.filter(ts => taskIds.includes(ts.taskId));
       }
 
+      // Obtener todos los datos necesarios
+      const allTasks = taskService.findMany();
+      const allProjects = projectService.findMany();
+      
+      // Crear mapas para acceso rápido
+      const taskMap = new Map(allTasks.map(t => [t.id, t]));
+      const projectMap = new Map(allProjects.map(p => [p.id, p]));
+      
       // Enriquecer datos con información de proyecto
       const enrichedTimesheets = allTimesheets.map(ts => {
-        const task = taskService.findUnique(ts.taskId, { include: { project: true } });
+        const task = taskMap.get(ts.taskId);
+        const project = task ? projectMap.get(task.projectId) : undefined;
         return {
           ...ts,
           task: {
             title: task?.title || '',
             project: {
-              name: (task as any)?.project?.name || ''
+              name: project?.name || ''
             }
           }
         };
