@@ -1,45 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, FolderKanban } from "lucide-react";
 import { ProjectCard } from "@/components/project-card";
 import { ExportButton } from "@/components/export-button";
 import { ThemeToggle } from "@/components/theme-provider";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string | null;
-  _count?: {
-    tasks: number;
-  };
-  tasks?: Array<{
-    timesheets: Array<{
-      duration: number | null;
-    }>;
-  }>;
-}
+import { useProjects } from "@/lib/hooks/use-storage";
 
 export default function HomePage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { projects, loading, create, refresh } = useProjects();
   const [showNewProject, setShowNewProject] = useState(false);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  async function fetchProjects() {
-    try {
-      const response = await fetch("/api/projects");
-      const data = await response.json();
-      setProjects(data);
-    } catch (error) {
-      console.error("Error loading projects:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -149,7 +119,7 @@ export default function HomePage() {
           ) : (
             <div className="grid gap-4">
               {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} onUpdate={fetchProjects} />
+                <ProjectCard key={project.id} project={project} onUpdate={refresh} />
               ))}
             </div>
           )}
@@ -160,7 +130,11 @@ export default function HomePage() {
       {showNewProject && (
         <NewProjectModal
           onClose={() => setShowNewProject(false)}
-          onCreated={fetchProjects}
+          onCreated={() => {
+            refresh();
+            setShowNewProject(false);
+          }}
+          onCreate={create}
         />
       )}
     </div>
@@ -171,9 +145,11 @@ export default function HomePage() {
 function NewProjectModal({
   onClose,
   onCreated,
+  onCreate,
 }: {
   onClose: () => void;
   onCreated: () => void;
+  onCreate: (data: { name: string; description?: string }) => void;
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -185,19 +161,8 @@ function NewProjectModal({
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          description,
-        }),
-      });
-
-      if (response.ok) {
-        onCreated();
-        onClose();
-      }
+      onCreate({ name, description });
+      onCreated();
     } catch (error) {
       console.error("Error creating project:", error);
     } finally {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { cn, formatDuration } from "@/lib/utils";
+import { timesheetService } from "@/lib/local-storage";
 
 interface Timesheet {
   id: string;
@@ -54,22 +55,15 @@ export function EditTimesheetModal({ timesheet, onClose, onSuccess }: EditTimesh
     const finalDuration = endDateTime ? durationSeconds : null;
 
     try {
-      const response = await fetch(`/api/timesheets/${timesheet.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title || null,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime?.toISOString() || null,
-          duration: finalDuration,
-          notes: notes || null,
-        }),
+      timesheetService.update(timesheet.id, {
+        title: title || undefined,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime?.toISOString() || null,
+        duration: finalDuration,
+        notes: notes || undefined,
       });
-
-      if (response.ok) {
-        onSuccess?.();
-        onClose();
-      }
+      onSuccess?.();
+      onClose();
     } catch (error) {
       console.error("Error updating timesheet:", error);
     } finally {

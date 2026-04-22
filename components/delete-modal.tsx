@@ -7,7 +7,7 @@ interface DeleteModalProps {
   title: string;
   description: string;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function DeleteModal({ title, description, onClose, onConfirm }: DeleteModalProps) {

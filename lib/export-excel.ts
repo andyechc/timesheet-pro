@@ -91,23 +91,23 @@ export function exportToExcel(data: ReportRow[], filename: string = "timesheet-r
   ];
   ws["!cols"] = colWidths;
 
-  // Estilos para la fila de cabecera (azul primary)
-  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+  // Usar el rango que ya calculó json_to_sheet
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1:I1");
+  const totalRowIndex = rows.length - 1; // Última fila (TOTAL)
+
+  // Estilos para la fila de cabecera (azul primary) - fila 0
   for (let C = range.s.c; C <= range.e.c; ++C) {
     const headerAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (!ws[headerAddress]) ws[headerAddress] = {};
+    if (!ws[headerAddress]) ws[headerAddress] = { v: "" };
     if (!ws[headerAddress].s) ws[headerAddress].s = {};
     ws[headerAddress].s.font = { bold: true, color: { rgb: "FFFFFF" } };
     ws[headerAddress].s.fill = { fgColor: { rgb: "2563EB" } }; // Primary-600 blue
   }
 
   // Estilos para la fila de total
-  const totalRowIndex = rows.length;
-  
-  // Aplicar estilos básicos (negrita al total)
   for (let C = range.s.c; C <= range.e.c; ++C) {
-    const cellAddress = XLSX.utils.encode_cell({ r: totalRowIndex - 1, c: C });
-    if (!ws[cellAddress]) ws[cellAddress] = {};
+    const cellAddress = XLSX.utils.encode_cell({ r: totalRowIndex, c: C });
+    if (!ws[cellAddress]) ws[cellAddress] = { v: "" };
     if (!ws[cellAddress].s) ws[cellAddress].s = {};
     ws[cellAddress].s.font = { bold: true };
     ws[cellAddress].s.fill = { fgColor: { rgb: "E0E7FF" } }; // Light blue background
