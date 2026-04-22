@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  tasks       Task[]
+  
+  @@map("projects")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      String     @default("PENDING")
+  projectId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  timesheets  Timesheet[]
+
+  @@map("tasks")
+}
+
+model Timesheet {
+  id          String    @id @default(uuid())
+  taskId      String
+  title       String?
+  startTime   DateTime
+  endTime     DateTime?
+  duration    Int?      // Duración en segundos
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  @@index([taskId])
+  @@index([startTime])
+  @@map("timesheets")
+}
+
+// Nota: SQLite no soporta enums. Usar valores: PENDING, IN_PROGRESS, COMPLETED

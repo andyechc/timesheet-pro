@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-rgb: 248, 250, 252;
+  --transition-duration: 150ms;
+}
+
+.dark {
+  --foreground-rgb: 248, 250, 252;
+  --background-rgb: 15, 23, 42;
+}
+
+html {
+  background-color: rgb(var(--background-rgb));
+  transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background-color: rgb(var(--background-rgb));
+  transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease;
+  min-height: 100vh;
+}
+
+/* Theme transition for all elements */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: var(--transition-duration);
+}
+
+/* Disable transition for elements that shouldn't animate */
+.no-theme-transition {
+  transition: none !important;
+}
+
+/* Squircle buttons */
+.btn-squircle {
+  @apply rounded-squircle transition-all duration-200 ease-out;
+}
+
+.btn-squircle:active {
+  transform: scale(0.96);
+}
+
+/* Play button animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+.btn-play-active {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Card shadows - with dark mode support */
+.card-soft {
+  @apply bg-white dark:bg-slate-800 rounded-squircle shadow-soft;
+}
+
+.card-soft-hover {
+  @apply bg-white dark:bg-slate-800 rounded-squircle shadow-soft transition-shadow duration-300;
+}
+
+.card-soft-hover:hover {
+  @apply shadow-soft-lg;
+}
+
+/* Glass effect for modals */
+.glass {
+  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl;
+}
+
+/* Dark mode specific shadows */
+.dark .shadow-soft {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-soft-lg {
+  box-shadow: 0 10px 40px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Timer display */
+.timer-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
