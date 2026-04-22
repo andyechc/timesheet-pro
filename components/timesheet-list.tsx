@@ -5,6 +5,7 @@ import { Trash2, Edit2 } from "lucide-react";
 import { formatDate, formatTime, formatDuration, cn } from "@/lib/utils";
 import { EditTimesheetModal } from "./edit-timesheet-modal";
 import { DeleteModal } from "./delete-modal";
+import { timesheetService } from "@/lib/local-storage";
 
 interface TimesheetListProps {
   timesheets: Array<{
@@ -23,14 +24,10 @@ export function TimesheetList({ timesheets, taskId, onUpdate }: TimesheetListPro
   const [editingTimesheet, setEditingTimesheet] = useState<typeof timesheets[0] | null>(null);
   const [deletingTimesheet, setDeletingTimesheet] = useState<typeof timesheets[0] | null>(null);
 
-  const handleDelete = async (timesheet: typeof timesheets[0]) => {
-    const response = await fetch(`/api/timesheets/${timesheet.id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
-      onUpdate?.();
-      setDeletingTimesheet(null);
-    }
+  const handleDelete = (timesheet: typeof timesheets[0]) => {
+    timesheetService.delete(timesheet.id);
+    onUpdate?.();
+    setDeletingTimesheet(null);
   };
   const completedTimesheets = timesheets
     .filter((t) => t.endTime && t.duration)

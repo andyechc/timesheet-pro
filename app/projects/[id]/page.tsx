@@ -16,6 +16,7 @@ import { ExportButton } from "@/components/export-button";
 import { ThemeToggle } from "@/components/theme-provider";
 import { useTimerStore } from "@/store/timer-store";
 import { formatDate, formatDuration } from "@/lib/utils";
+import { projectService, taskService, timesheetService } from "@/lib/local-storage";
 // Status values: PENDING, IN_PROGRESS, COMPLETED
 
 interface Project {
@@ -58,12 +59,11 @@ export default function ProjectPage() {
     stopTimer: stopTimerStore,
   } = useTimerStore();
 
-  const fetchProject = useCallback(async () => {
+  const fetchProject = useCallback(() => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) throw new Error("Project not found");
-      const data = await response.json();
-      setProject(data);
+      const data = projectService.findUnique(projectId, { tasks: true });
+      if (!data) throw new Error("Project not found");
+      setProject(data as any);
     } catch (error) {
       console.error("Error loading project:", error);
       router.push("/");
@@ -76,37 +76,25 @@ export default function ProjectPage() {
     fetchProject();
   }, [fetchProject]);
 
-  // Controladores del timer con integración API
-  const handleStartTimer = async (taskId: string, projId: string, title?: string) => {
-    // 1. Crear timesheet en el servidor
-    const response = await fetch("/api/timesheets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        taskId,
-        title: title || null,
-        startTime: new Date().toISOString(),
-      }),
+  // Controladores del timer con localStorage
+  const handleStartTimer = (taskId: string, projId: string, title?: string) => {
+    // 1. Crear timesheet en localStorage
+    const timesheet = timesheetService.create({
+      taskId,
+      title: title || undefined,
+      startTime: new Date().toISOString(),
     });
-
-    if (response.ok) {
-      const timesheet = await response.json();
-      // 2. Iniciar en el store global
-      startTimerStore(taskId, projId, timesheet.id);
-    }
+    // 2. Iniciar en el store global
+    startTimerStore(taskId, projId, timesheet.id);
   };
 
-  const handleStopTimer = async () => {
+  const handleStopTimer = () => {
     const result = stopTimerStore();
     if (result) {
-      // Actualizar timesheet en el servidor
-      await fetch(`/api/timesheets/${result.timesheetId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endTime: new Date().toISOString(),
-          duration: result.duration,
-        }),
+      // Actualizar timesheet en localStorage
+      timesheetService.update(result.timesheetId, {
+        endTime: new Date().toISOString(),
+        duration: result.duration,
       });
       fetchProject(); // Recargar para mostrar el nuevo registro
     }
@@ -327,26 +315,19 @@ function NewTaskModal({
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title) return;
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          projectId,
-        }),
+      taskService.create({
+        title,
+        description,
+        projectId,
       });
-
-      if (response.ok) {
-        onCreated();
-        onClose();
-      }
+      onCreated();
+      onClose();
     } catch (error) {
       console.error("Error creating task:", error);
     } finally {

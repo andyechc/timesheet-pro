@@ -10,6 +10,7 @@ import { TimesheetList } from "./timesheet-list";
 import { ManualEntryModal } from "./manual-entry-modal";
 import { EditTaskModal } from "./edit-task-modal";
 import { DeleteModal } from "./delete-modal";
+import { taskService } from "@/lib/local-storage";
 
 const statuses = [
   { value: "PENDING", label: "Pendiente", icon: Circle, color: "bg-slate-100 text-slate-600" },
@@ -43,7 +44,7 @@ interface TaskCardProps {
   onStartTimer: (taskId: string, projectId: string, title?: string) => void;
   onPauseTimer: () => void;
   onStopTimer: () => void;
-  onUpdate?: () => void;
+  onUpdate?: () => void | Promise<void>;
 }
 
 export function TaskCard({
@@ -83,29 +84,19 @@ export function TaskCard({
     COMPLETED: "Completada",
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = (newStatus: string) => {
     try {
-      const response = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (response.ok) {
-        onUpdate?.();
-      }
+      taskService.update(task.id, { status: newStatus });
+      onUpdate?.();
     } catch (error) {
       console.error("Error updating status:", error);
     }
     setShowStatusMenu(false);
   };
 
-  const handleDelete = async () => {
-    const response = await fetch(`/api/tasks/${task.id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
-      onUpdate?.();
-    }
+  const handleDelete = () => {
+    taskService.delete(task.id);
+    onUpdate?.();
   };
 
   const currentStatus = statuses.find(s => s.value === task.status) || statuses[0];
@@ -226,7 +217,7 @@ export function TaskCard({
       </div>
 
       {/* Historial expandible */}
-      {expanded && <TimesheetList timesheets={task.timesheets} taskId={task.id} onUpdate={onUpdate} />}
+      {expanded && <TimesheetList timesheets={task.timesheets} taskId={task.id} onUpdate={onUpdate || (() => {})} />}
 
       {/* Modal para entrada manual */}
       {showManualEntry && (

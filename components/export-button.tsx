@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { exportToExcel, generateMonthlyReport } from "@/lib/export-excel";
 import { cn } from "@/lib/utils";
+import { timesheetService, taskService, projectService } from "@/lib/local-storage";
 
 interface ExportButtonProps {
   projectId?: string;
@@ -25,17 +26,42 @@ export function ExportButton({
     setIsExporting(true);
 
     try {
-      // Construir query params
-      const params = new URLSearchParams();
-      params.set("month", month);
-      if (projectId) params.set("projectId", projectId);
+      // Obtener datos de localStorage
+      const [year, monthNum] = month.split('-').map(Number);
+      const startOfMonth = new Date(year, monthNum - 1, 1);
+      const endOfMonth = new Date(year, monthNum, 0, 23, 59, 59);
 
-      // Obtener datos del servidor
-      const response = await fetch(`/api/reports?${params}`);
-      const data = await response.json();
+      let allTimesheets = timesheetService.findMany({ include: { task: true } });
 
-      if (data.timesheets && data.timesheets.length > 0) {
-        const report = generateMonthlyReport(data.timesheets);
+      // Filtrar por mes
+      allTimesheets = allTimesheets.filter(ts => {
+        const tsDate = new Date(ts.startTime);
+        return tsDate >= startOfMonth && tsDate <= endOfMonth && ts.endTime && ts.duration;
+      });
+
+      // Filtrar por proyecto si se especifica
+      if (projectId) {
+        const projectTasks = taskService.findMany({ where: { projectId } });
+        const taskIds = projectTasks.map(t => t.id);
+        allTimesheets = allTimesheets.filter(ts => taskIds.includes(ts.taskId));
+      }
+
+      // Enriquecer datos con información de proyecto
+      const enrichedTimesheets = allTimesheets.map(ts => {
+        const task = taskService.findUnique(ts.taskId, { include: { project: true } });
+        return {
+          ...ts,
+          task: {
+            title: task?.title || '',
+            project: {
+              name: (task as any)?.project?.name || ''
+            }
+          }
+        };
+      });
+
+      if (enrichedTimesheets && enrichedTimesheets.length > 0) {
+        const report = generateMonthlyReport(enrichedTimesheets as any);
         const filename = projectId
           ? `reporte-proyecto-${month}`
           : `reporte-mensual-${month}`;

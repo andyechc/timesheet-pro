@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, CheckCircle2, Circle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { taskService } from "@/lib/local-storage";
 
 const statuses = [
   { value: "PENDING", label: "Pendiente", icon: Circle, color: "bg-slate-100 text-slate-600" },
@@ -36,20 +37,13 @@ export function EditTaskModal({ task, onClose, onSuccess }: EditTaskModalProps) 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description: description || null,
-          status,
-        }),
+      taskService.update(task.id, {
+        title,
+        description: description || undefined,
+        status,
       });
-
-      if (response.ok) {
-        onSuccess?.();
-        onClose();
-      }
+      onSuccess?.();
+      onClose();
     } catch (error) {
       console.error("Error updating task:", error);
     } finally {

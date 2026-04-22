@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { projectService } from "@/lib/local-storage";
 
 interface Project {
   id: string;
@@ -27,19 +28,12 @@ export function EditProjectModal({ project, onClose, onSuccess }: EditProjectMod
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          description: description || null,
-        }),
+      projectService.update(project.id, {
+        name,
+        description: description || null,
       });
-
-      if (response.ok) {
-        onSuccess?.();
-        onClose();
-      }
+      onSuccess?.();
+      onClose();
     } catch (error) {
       console.error("Error updating project:", error);
     } finally {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { cn, formatDuration } from "@/lib/utils";
+import { timesheetService } from "@/lib/local-storage";
 
 interface ManualEntryModalProps {
   taskId: string;
@@ -38,23 +39,16 @@ export function ManualEntryModal({ taskId, onClose }: ManualEntryModalProps) {
     const endDateTime = new Date(`${date}T${endTime}`);
 
     try {
-      const response = await fetch("/api/timesheets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          taskId,
-          title: title || null,
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          duration: durationSeconds,
-          notes,
-        }),
+      timesheetService.create({
+        taskId,
+        title: title || undefined,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        duration: durationSeconds,
+        notes,
       });
-
-      if (response.ok) {
-        onClose();
-        window.location.reload();
-      }
+      onClose();
+      window.location.reload();
     } catch (error) {
       console.error("Error creating timesheet:", error);
     } finally {

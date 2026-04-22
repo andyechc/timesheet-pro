@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { EditProjectModal } from "./edit-project-modal";
 import { DeleteModal } from "./delete-modal";
+import { projectService } from "@/lib/local-storage";
 
 interface ProjectCardProps {
   project: {
@@ -37,13 +38,9 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const handleDelete = async () => {
-    const response = await fetch(`/api/projects/${project.id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) {
-      onUpdate?.();
-    }
+  const handleDelete = () => {
+    projectService.delete(project.id);
+    onUpdate?.();
   };
 
   return (
